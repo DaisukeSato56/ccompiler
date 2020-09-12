@@ -1,4 +1,4 @@
-CFLAGS=-std=cll -g -static
+CFLAGS=-std=c11 -g -static
 
 cc: cc.c
 
