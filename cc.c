@@ -19,9 +19,9 @@ typedef struct Node Node;
 struct Node
 {
   NodeKind kind;
-  Node *lhs;
-  Node *rhs;
-  int val;
+  Node *lhs; // 左辺
+  Node *rhs; // 右辺
+  int val;   // kindがND_NUMの場合のみ扱う
 }
 
 typedef enum {
@@ -29,6 +29,23 @@ typedef enum {
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;
+
+Node *new_node(Node kind, Node *lhs, Node *rhs)
+{
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = kind;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  return node;
+}
+
+Node *new_node_num(int val)
+{
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_NUM;
+  node->val = val;
+  return node;
+}
 
 typedef struct Token Token;
 
