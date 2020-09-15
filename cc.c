@@ -7,6 +7,24 @@
 
 typedef enum
 {
+  ND_ADD, // +
+  ND_SUB, // -
+  ND_MUL, // *
+  ND_DIV, // /
+  ND_NUM, // 整数
+} NodeKind;
+
+typedef struct Node Node;
+
+struct Node
+{
+  NodeKind kind;
+  Node *lhs;
+  Node *rhs;
+  int val;
+}
+
+typedef enum {
   TK_RESERVED, // 記号
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
