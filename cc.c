@@ -22,9 +22,10 @@ struct Node
   Node *lhs; // 左辺
   Node *rhs; // 右辺
   int val;   // kindがND_NUMの場合のみ扱う
-}
+};
 
-typedef enum {
+typedef enum
+{
   TK_RESERVED, // 記号
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
@@ -43,6 +44,9 @@ struct Token
 // 現在着目しているトークン
 Token *token;
 char *user_input;
+
+// 関数の参照できるようにする
+Node *expr();
 
 // エラー個所を報告するため
 void error_at(char *loc, char *fmt, ...)
@@ -157,19 +161,15 @@ Node *new_node_num(int val)
   return node;
 }
 
-Node *expr()
+Node *primary()
 {
-  Node *node = mul();
-
-  for (;;)
+  if (consume('('))
   {
-    if (consume('+'))
-      node = new_node(ND_ADD, node, mul());
-    else if (consume('-'))
-      node = new_node(ND_SUB, node, mul());
-    else
-      return node;
+    Node *node = expr();
+    expect(')');
+    return node;
   }
+  return new_node_num(expect_number());
 }
 
 Node *mul()
@@ -187,15 +187,19 @@ Node *mul()
   }
 }
 
-Node *primary()
+Node *expr()
 {
-  if (consume('('))
+  Node *node = mul();
+
+  for (;;)
   {
-    Node *node = expr();
-    expect(')');
-    return node;
+    if (consume('+'))
+      node = new_node(ND_ADD, node, mul());
+    else if (consume('-'))
+      node = new_node(ND_SUB, node, mul());
+    else
+      return node;
   }
-  return new_node_num(expect_number());
 }
 
 void gen(Node *node)
@@ -241,30 +245,19 @@ int main(int argc, char **argv)
   }
 
   user_input = argv[1];
-  token = tokenize();
+  token = tokenize(user_input);
+  Node *node = expr();
 
   printf(".intel_syntax noprefix\n");
   printf(".globl main\n");
   printf("main:\n");
 
-  // 式の最初は数でなければいけないので、それをチェックして
-  // 最初のmov命令を出力
-  printf("  mov rax, %d\n", expect_number());
+  // 抽象構文技を下りながらコード生成
+  gen(node);
 
-  // `+ <数>`あるいは`- <数>`というトークンの並びを処理しつつ
-  // アセンブリを出力
-  while (!at_eof())
-  {
-    if (consume('+'))
-    {
-      printf("  add rax, %d\n", expect_number());
-      continue;
-    }
-
-    expect('-');
-    printf("  sub rax, %d\n", expect_number());
-  }
-
+  // スタックトップ残っている式全体の値を
+  // RAXにロードして関数の返り値とする
+  printf("  pop rax\n");
   printf("  ret\n");
   return 0;
 }
